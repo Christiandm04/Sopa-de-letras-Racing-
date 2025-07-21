@@ -211,6 +211,54 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         startTimer();
     }
+    
+    function setupEventListeners() {
+        // Eventos de Ratón (para escritorio)
+        dom.grid.addEventListener('mousedown', handleMouseDown);
+        dom.grid.addEventListener('mouseover', handleMouseOver);
+        window.addEventListener('mouseup', handleMouseUp);
+        
+        // --- INICIO DE LA SOLUCIÓN PARA MÓVILES ---
+        // Eventos Táctiles (para móviles y tabletas)
+        // Usamos { passive: false } para poder llamar a event.preventDefault() y evitar el scroll
+        dom.grid.addEventListener('touchstart', handleTouchStart, { passive: false });
+        dom.grid.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd);
+        // --- FIN DE LA SOLUCIÓN PARA MÓVILES ---
+
+        dom.solveButton.addEventListener('click', () => {
+            revealMissingWords();
+            dom.solveButton.disabled = true;
+        });
+    }
+
+    // --- NUEVAS FUNCIONES PARA MANEJAR EVENTOS TÁCTILES ---
+    function handleTouchStart(e) {
+        // Prevenimos el comportamiento por defecto (scroll) al tocar la cuadrícula
+        e.preventDefault();
+        const touch = e.touches[0];
+        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (targetCell && targetCell.tagName === 'TD') {
+            handleMouseDown({ target: targetCell });
+        }
+    }
+
+    function handleTouchMove(e) {
+        // Prevenimos el comportamiento por defecto (scroll) al arrastrar por la cuadrícula
+        e.preventDefault();
+        const touch = e.touches[0];
+        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (targetCell && targetCell.tagName === 'TD') {
+            handleMouseOver({ target: targetCell });
+        }
+    }
+
+    function handleTouchEnd(e) {
+        // Cuando se levanta el dedo, simplemente llamamos a la lógica existente de 'mouseup'
+        handleMouseUp();
+    }
+    // --- FIN DE LAS NUEVAS FUNCIONES ---
+
 
     function endGame(isWin) {
         if (state.gameEnded) return;
@@ -254,19 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    function setupEventListeners() {
-        dom.grid.addEventListener('mousedown', handleMouseDown);
-        dom.grid.addEventListener('mouseover', handleMouseOver);
-        window.addEventListener('mouseup', handleMouseUp);
-        dom.solveButton.addEventListener('click', () => {
-            revealMissingWords();
-            dom.solveButton.disabled = true;
-        });
-    }
 
-    // El resto del código JS (generateGrid, renderGrid, etc.) permanece igual.
-    // Lo incluyo para que sea un bloque completo y funcional.
     function generateGrid() {
         state.grid = Array(config.GRID_ROWS).fill(null).map(() => Array(config.GRID_COLS).fill(''));
         state.wordLocations = {};
