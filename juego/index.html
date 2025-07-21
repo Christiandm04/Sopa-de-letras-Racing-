@@ -24,6 +24,7 @@
       --timer-red: #d9534f;
       --bg-color-rgba: rgba(0, 106, 78, 0.92);
       --shadow-color: rgba(0, 0, 0, 0.3);
+      --line-thickness: 4px; /* Grosor de la línea de selección */
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,10 +40,10 @@
       background-position: center;
       background-repeat: no-repeat;
       padding: 20px;
-      overflow: hidden; /* Evita el scroll en escritorio */
+      overflow: hidden;
     }
 
-    /* --- CONTENEDOR PRINCIPAL DEL JUEGO --- */
+    /* --- CONTENEDOR PRINCIPAL --- */
     .game-container {
       display: flex; flex-direction: row; gap: 30px;
       background-color: var(--bg-color-rgba);
@@ -53,56 +54,64 @@
       width: 100%; max-width: 1200px; height: 90vh; max-height: 700px;
     }
 
-    /* --- PANELES IZQUIERDO (GRID) Y DERECHO (INFO) --- */
+    /* --- PANELES --- */
     .grid-panel { flex: 1.5; display: flex; justify-content: center; align-items: center; }
     .info-panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; color: var(--racing-white); text-align: center; }
-    .info-header h1 { font-size: 2.5em; font-weight: 800; color: var(--racing-white); text-shadow: 2px 2px 4px var(--shadow-color); letter-spacing: 1px; line-height: 1.2; }
+    .info-header h1 { font-size: 2.5em; font-weight: 800; text-shadow: 2px 2px 4px var(--shadow-color); letter-spacing: 1px; line-height: 1.2; }
 
-    /* --- SOPA DE LETRAS (GRID ESTÁTICA) --- */
+    /* --- SOPA DE LETRAS (GRID) --- */
     #wordSearchGrid { border-collapse: collapse; width: 100%; height: 100%; max-width: 600px; max-height: 600px; }
     
-    td { 
-      text-align: center; vertical-align: middle; 
-      font-size: clamp(1rem, 3.5vmin, 1.8rem); font-weight: 600; 
-      color: var(--racing-white); text-transform: uppercase; 
-      cursor: pointer; user-select: none; 
-      transition: background-color 0.2s ease; /* Transición solo para el color de fondo */
-      aspect-ratio: 1 / 1; 
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.2); 
+    td {
+      text-align: center; vertical-align: middle;
+      font-size: clamp(1rem, 3.5vmin, 1.8rem); font-weight: 600;
+      color: var(--racing-white); text-transform: uppercase;
+      cursor: pointer; user-select: none;
+      transition: background-color 0.2s ease;
+      aspect-ratio: 1 / 1;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+      /* Propiedades para el fondo y la línea */
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
     }
     
-    td:not(.found-perm):not(.selected):hover { 
-      background-color: rgba(255, 255, 255, 0.15); /* Efecto hover sutil sin cambiar tamaño */
+    td:not(.found-perm):not(.selected):hover { background-color: rgba(255, 255, 255, 0.15); }
+    
+    /* --- NUEVOS ESTILOS PARA LA LÍNEA DE SELECCIÓN --- */
+    td.selected {
+      color: var(--racing-black);
+      /* La línea se define con las clases de dirección */
     }
     
-    td.selected { 
-      background-color: var(--accent-yellow); 
-      color: var(--racing-black); 
-      border-radius: 50%; /* La selección es circular pero sin escalar */
-      z-index: 2; 
+    td.found-perm {
+      background-color: var(--found-green);
+      border-radius: 10px; /* Mantenemos un borde sutil para las encontradas */
     }
     
-    td.found-perm { 
-      background-color: var(--found-green); 
-      color: var(--racing-white); 
-      border-radius: 10px; /* Las celdas encontradas son rectángulos redondeados */
-      box-shadow: 0 0 15px rgba(40, 167, 69, 0.7); 
-    }
+    /* Clases de dirección para la línea (usando gradientes) */
+    .line-horizontal { background-image: linear-gradient(to bottom, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); }
+    .line-vertical { background-image: linear-gradient(to right, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); }
+    .line-diag-dr { background-image: linear-gradient(135deg, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); } /* Down-Right */
+    .line-diag-dl { background-image: linear-gradient(45deg, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); } /* Down-Left */
+
+    /* Define el color de la línea según el estado */
+    td.selected { --line-color: var(--accent-yellow); }
+    td.found-perm { --line-color: var(--racing-white); } /* Línea blanca sobre fondo verde */
 
     td.missing { background-color: var(--timer-red); color: var(--racing-white); border-radius: 10px; animation: pulse 0.8s infinite alternate; }
 
     /* --- PANEL DE INFORMACIÓN --- */
     .info-content h2 { font-size: 1.3rem; margin-bottom: 10px; border-bottom: 2px solid var(--accent-yellow); display: inline-block; padding-bottom: 5px; }
     #wordsList ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 20px; }
-    #wordsList li { font-size: 1.2em; padding: 4px 0 4px 25px; position: relative; opacity: 0.9; text-shadow: 1px 1px 3px var(--shadow-color); }
+    #wordsList li { font-size: 1.2em; padding: 4px 0 4px 25px; position: relative; text-shadow: 1px 1px 3px var(--shadow-color); }
     #wordsList li.found { opacity: 0.5; }
     #wordsList li.found::before { content: "✓"; position: absolute; left: 0; color: var(--accent-yellow); font-weight: bold; animation: checkmark-pop 0.4s ease-out; }
     #wordsList li.found span { text-decoration: line-through; }
     .info-footer { margin-top: 20px; }
-    #timer { font-size: 3.5em; font-weight: 800; color: var(--racing-white); text-shadow: 1px 1px 3px var(--shadow-color); }
+    #timer { font-size: 3.5em; font-weight: 800; text-shadow: 1px 1px 3px var(--shadow-color); }
     #timer.critical { color: var(--timer-red); animation: pulse 1s infinite; }
 
-    /* --- MODAL DE FIN DE JUEGO --- */
+    /* --- MODAL Y ANIMACIONES --- */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
     .modal-overlay.visible { opacity: 1; visibility: visible; }
     .modal-content { background: var(--racing-white); color: var(--racing-black); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px var(--shadow-color); transform: scale(0.7); transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); width: 90%; max-width: 500px; }
@@ -113,34 +122,19 @@
     .modal-content button:hover { opacity: 0.9; }
     #solve-button { background-color: var(--accent-yellow); color: var(--racing-black); display: none; }
     #solve-button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; opacity: 1; }
-
-    /* --- ANIMACIONES --- */
     @keyframes pulse { to { opacity: 0.7; } }
     @keyframes checkmark-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-    /* --- MEDIA QUERIES PARA RESPONSIVE (MÓVIL) --- */
+    /* --- MEDIA QUERIES --- */
     @media (max-width: 900px) {
-      body {
-        align-items: flex-start;
-        padding: 10px;
-        overflow-y: auto; /* Permite scroll en móvil si el contenido es muy alto */
-      }
-      .game-container {
-        flex-direction: column;
-        height: auto;
-        max-height: none;
-        padding: 15px;
-      }
-      .info-panel {
-        order: -1; /* Pone el panel de info arriba */
-        gap: 15px;
-        margin-bottom: 15px;
-      }
+      body { align-items: flex-start; padding: 10px; overflow-y: auto; }
+      .game-container { flex-direction: column; height: auto; max-height: none; padding: 15px; }
+      .info-panel { order: -1; gap: 15px; margin-bottom: 15px; }
       .info-header h1 { font-size: 1.7em; }
       .info-content h2 { margin-bottom: 8px; font-size: 1.2em; }
       #wordsList ul { gap: 5px 15px; }
       #wordsList li { font-size: 1em; }
-      .info-footer { margin-top: 10px; } /* Reducido para juntar más los elementos */
+      .info-footer { margin-top: 10px; }
       .info-footer h2 { font-size: 1.2em; }
       #timer { font-size: 2.5em; }
       .modal-content #modal-message { font-size: 1.5em; }
@@ -153,9 +147,7 @@
       <table id="wordSearchGrid"></table>
     </div>
     <div class="info-panel">
-        <div class="info-header">
-            <h1>SOPA DE LETRAS<br>RACINGUISTA</h1>
-        </div>
+        <div class="info-header"><h1>SOPA DE LETRAS<br>RACINGUISTA</h1></div>
         <div class="info-content">
             <h2>Palabras a Encontrar</h2>
             <div id="wordsList"><ul></ul></div>
@@ -177,7 +169,6 @@
     </div>
   </div>
 
-  <!-- Audios (alojados externamente, para un proyecto real es mejor alojarlos localmente) -->
   <audio id="sound-click" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-the-sound-pack-tree/tspt_computer_mouse_click_single_03_082.mp3" preload="auto"></audio>
   <audio id="sound-found" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-universal-production-music/upm_sfx_1_9.mp3" preload="auto"></audio>
   <audio id="sound-win" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-little-robot-sound-factory/lrfs_sfx_achieve_bell_2_positive_game.mp3" preload="auto"></audio>
@@ -185,15 +176,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURACIÓN DEL JUEGO ---
     const config = {
         WORDS: ["SANGALLI", "JEREMY", "EZKIETA", "ARANA", "MICHELIN", "SAUL", "ALDASORO", "MANTILLA", "VICENTE"],
-        GRID_ROWS: 12,
-        GRID_COLS: 12,
-        GAME_DURATION: 180, // en segundos (3 minutos)
+        GRID_ROWS: 12, GRID_COLS: 12, GAME_DURATION: 180,
     };
 
-    // --- REFERENCIAS A ELEMENTOS DEL DOM ---
     const dom = {
         grid: document.getElementById('wordSearchGrid'),
         wordsList: document.querySelector('#wordsList ul'),
@@ -202,32 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
         modalMessage: document.getElementById('modal-message'),
         solveButton: document.getElementById('solve-button'),
         sounds: {
-            click: document.getElementById('sound-click'),
-            found: document.getElementById('sound-found'),
-            win: document.getElementById('sound-win'),
-            lose: document.getElementById('sound-lose'),
+            click: document.getElementById('sound-click'), found: document.getElementById('sound-found'),
+            win: document.getElementById('sound-win'), lose: document.getElementById('sound-lose'),
         }
     };
 
-    // --- ESTADO DEL JUEGO ---
     const state = {
-        grid: [],
-        wordLocations: {},
-        isSelecting: false,
-        selection: { cells: [], startCell: null, endCell: null },
-        gameEnded: false,
-        foundWords: new Set(),
-        timeLeft: config.GAME_DURATION,
-        timerInterval: null
+        grid: [], wordLocations: {}, isSelecting: false,
+        selection: { cells: [], startCell: null, endCell: null, directionClass: '' },
+        gameEnded: false, foundWords: new Set(), timeLeft: config.GAME_DURATION, timerInterval: null
     };
 
-    // --- LÓGICA PRINCIPAL ---
-
+    // --- INICIO Y CONFIGURACIÓN ---
     function init() {
-        if (!generateGrid()) {
-            alert("Error crítico: No se pudo generar la sopa de letras. Por favor, refresca la página.");
-            return;
-        }
+        if (!generateGrid()) { alert("Error al generar la sopa de letras."); return; }
         renderGrid();
         renderWordsList();
         setupEventListeners();
@@ -235,59 +210,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupEventListeners() {
-        // Eventos de Ratón (para escritorio)
         dom.grid.addEventListener('mousedown', handleMouseDown);
-        dom.grid.addEventListener('mouseover', handleMouseOver);
         window.addEventListener('mouseup', handleMouseUp);
-        
-        // Eventos Táctiles (para móviles y tabletas) para evitar el scroll al seleccionar
-        // Se usa { passive: false } para poder llamar a event.preventDefault()
+        dom.grid.addEventListener('mouseover', handleMouseOver);
         dom.grid.addEventListener('touchstart', handleTouchStart, { passive: false });
-        dom.grid.addEventListener('touchmove', handleTouchMove, { passive: false });
         window.addEventListener('touchend', handleTouchEnd);
-
-        // Botón de resolver en el modal de fin de juego
+        dom.grid.addEventListener('touchmove', handleTouchMove, { passive: false });
         dom.solveButton.addEventListener('click', () => {
             revealMissingWords();
             dom.solveButton.disabled = true;
         });
     }
 
-    // --- MANEJADORES DE EVENTOS TÁCTILES (SOLUCIÓN MÓVIL) ---
-    function handleTouchStart(e) {
-        e.preventDefault(); // Previene el scroll y otros comportamientos del navegador
-        const touch = e.touches[0];
-        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (targetCell && targetCell.tagName === 'TD') {
-            handleMouseDown({ target: targetCell }); // Reutiliza la lógica del ratón
-        }
-    }
+    // --- MANEJADORES DE EVENTOS (TÁCTIL Y RATÓN) ---
+    function handleTouchStart(e) { e.preventDefault(); handleMouseDown({ target: document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) }); }
+    function handleTouchMove(e) { e.preventDefault(); handleMouseOver({ target: document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) }); }
+    function handleTouchEnd() { handleMouseUp(); }
 
-    function handleTouchMove(e) {
-        e.preventDefault(); // Previene el scroll al arrastrar el dedo
-        const touch = e.touches[0];
-        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (targetCell && targetCell.tagName === 'TD') {
-            handleMouseOver({ target: targetCell }); // Reutiliza la lógica del ratón
-        }
-    }
-
-    function handleTouchEnd() {
-        handleMouseUp(); // Reutiliza la lógica del ratón
-    }
-
-    // --- MANEJADORES DE EVENTOS DE RATÓN (LÓGICA DE SELECCIÓN) ---
     function handleMouseDown(e) {
         const cell = e.target.closest('td');
         if (state.gameEnded || !cell) return;
         state.isSelecting = true;
-        // El .catch() evita errores en navegadores que bloquean el audio al inicio
         dom.sounds.click.play().catch(()=>{});
         state.selection.startCell = cell;
         state.selection.endCell = cell;
         updateSelection();
     }
-
     function handleMouseOver(e) {
         if (!state.isSelecting) return;
         const cell = e.target.closest('td');
@@ -295,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selection.endCell = cell;
         updateSelection();
     }
-
     function handleMouseUp() {
         if (!state.isSelecting) return;
         state.isSelecting = false;
@@ -307,26 +254,35 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateSelection() {
         clearSelectionClasses();
         state.selection.cells = [];
+
         const start = state.selection.startCell.dataset;
         const end = state.selection.endCell.dataset;
         const startR = parseInt(start.row), startC = parseInt(start.col);
         const endR = parseInt(end.row), endC = parseInt(end.col);
 
-        // Validar que la selección sea recta (horizontal, vertical o diagonal perfecta)
         let dr = Math.sign(endR - startR), dc = Math.sign(endC - startC);
-        if (Math.abs(endR - startR) > 0 && Math.abs(endC - startC) > 0 && Math.abs(endR - startR) !== Math.abs(endC - startC)) {
-            return; // No es una línea válida, no hacer nada
-        }
         
-        // Recorrer la línea desde el inicio hasta el fin
+        if (Math.abs(endR - startR) > 0 && Math.abs(endC - startC) > 0 && Math.abs(endR - startR) !== Math.abs(endC - startC)) {
+            state.selection.directionClass = '';
+            dr = 0; dc = 0; // Invalida la dirección si no es recta
+        } else if (dr === 0 && dc !== 0) state.selection.directionClass = 'line-horizontal';
+        else if (dr !== 0 && dc === 0) state.selection.directionClass = 'line-vertical';
+        else if (dr === dc) state.selection.directionClass = 'line-diag-dr';
+        else if (dr !== dc) state.selection.directionClass = 'line-diag-dl';
+        else state.selection.directionClass = 'line-horizontal'; // fallback para un solo punto
+        
         let r = startR, c = startC;
         while (true) {
-            const currentCell = dom.grid.rows[r]?.cells[c]; // Uso de optional chaining '?' por seguridad
+            const currentCell = dom.grid.rows[r]?.cells[c];
             if (currentCell) {
                 state.selection.cells.push(currentCell);
                 currentCell.classList.add('selected');
+                if (state.selection.directionClass) {
+                    currentCell.classList.add(state.selection.directionClass);
+                }
             }
             if (r === endR && c === endC) break;
+            if(dr === 0 && dc === 0) break; // Sale si la dirección es inválida
             r += dr; c += dc;
         }
     }
@@ -335,24 +291,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.selection.cells.length < 2) return;
         const selectedString = state.selection.cells.map(c => c.textContent).join('');
         const reversedString = selectedString.split('').reverse().join('');
-
         const word = config.WORDS.find(w => (w === selectedString || w === reversedString) && !state.foundWords.has(w));
         
         if (word) {
             dom.sounds.found.play().catch(()=>{});
             state.foundWords.add(word);
             document.getElementById(`word-${word}`).classList.add('found');
-            state.selection.cells.forEach(c => c.classList.add('found-perm'));
-            if (state.foundWords.size === config.WORDS.length) {
-                endGame(true); // Ganó
-            }
+            
+            // Hacemos el estilo de la palabra encontrada permanente
+            state.selection.cells.forEach(c => {
+                c.classList.remove('selected');
+                c.classList.add('found-perm');
+                // La clase de dirección se mantiene para dibujar la línea blanca
+            });
+            
+            if (state.foundWords.size === config.WORDS.length) endGame(true);
         }
     }
 
     function clearSelectionClasses() {
         state.selection.cells.forEach(cell => {
             if (!cell.classList.contains('found-perm')) {
-                cell.classList.remove('selected');
+                cell.classList.remove('selected', 'line-horizontal', 'line-vertical', 'line-diag-dr', 'line-diag-dl');
             }
         });
     }
@@ -382,16 +342,13 @@ document.addEventListener('DOMContentLoaded', () => {
         state.timerInterval = setInterval(() => {
             state.timeLeft--;
             dom.timer.textContent = formatTime(state.timeLeft);
-            if (state.timeLeft <= 10 && !state.gameEnded) {
-                dom.timer.classList.add('critical');
-            }
-            if (state.timeLeft <= 0) {
-                endGame(false); // Perdió por tiempo
-            }
+            if (state.timeLeft <= 10 && !state.gameEnded) dom.timer.classList.add('critical');
+            if (state.timeLeft <= 0) endGame(false);
         }, 1000);
     }
     
-    // --- FUNCIONES DE GENERACIÓN Y RENDERIZADO DE LA CUADRÍCULA ---
+    // --- GENERACIÓN DE LA CUADRÍCULA ---
+    // (Esta sección no ha cambiado)
     function generateGrid() {
         state.grid = Array(config.GRID_ROWS).fill(null).map(() => Array(config.GRID_COLS).fill(''));
         state.wordLocations = {};
@@ -400,7 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fillEmptyCells();
         return true;
     }
-    
     function placeWord(word) {
         const directions = [ { r: 0, c: 1 }, { r: 0, c: -1 }, { r: 1, c: 0 }, { r: -1, c: 0 }, { r: 1, c: 1 }, { r: -1, c: -1 }, { r: 1, c: -1 }, { r: -1, c: 1 } ];
         const validPlacements = [];
@@ -417,7 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
         state.wordLocations[word] = { start: {r,c}, end: endPos, dir };
         return true;
     }
-
     function canPlace(word, r, c, dir) {
         for (let i = 0; i < word.length; i++) {
             const newR = r + i * dir.r, newC = c + i * dir.c;
@@ -426,7 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return true;
     }
-
     function fillEmptyCells() {
         const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
         for (let r = 0; r < config.GRID_ROWS; r++) {
@@ -435,28 +389,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
     function renderGrid() {
         dom.grid.innerHTML = '';
         for (let r = 0; r < config.GRID_ROWS; r++) {
             const row = dom.grid.insertRow();
             for (let c = 0; c < config.GRID_COLS; c++) {
                 const cell = row.insertCell();
-                cell.dataset.row = r;
-                cell.dataset.col = c;
+                cell.dataset.row = r; cell.dataset.col = c;
                 cell.textContent = state.grid[r][c];
             }
         }
     }
-
     function renderWordsList() {
         config.WORDS.sort().forEach(word => {
-            const li = document.createElement('li');
-            li.id = `word-${word}`;
-            const span = document.createElement('span');
-            span.textContent = word;
-            li.appendChild(span);
-            dom.wordsList.appendChild(li);
+            const li = document.createElement('li'); li.id = `word-${word}`;
+            const span = document.createElement('span'); span.textContent = word;
+            li.appendChild(span); dom.wordsList.appendChild(li);
         });
     }
 
@@ -464,27 +412,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function revealMissingWords() {
         config.WORDS.forEach(word => {
             if (state.foundWords.has(word)) return;
-            const loc = state.wordLocations[word];
-            if (!loc) return;
-            
+            const loc = state.wordLocations[word]; if (!loc) return;
             let r = loc.start.r, c = loc.start.c;
             for (let i = 0; i < word.length; i++) {
                 const cell = dom.grid.rows[r]?.cells[c];
-                if (cell && !cell.classList.contains('found-perm')) {
-                    cell.classList.add('missing');
-                }
+                if (cell) cell.classList.add('missing');
                 r += loc.dir.r; c += loc.dir.c;
             }
         });
     }
-
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
-    // --- INICIAR EL JUEGO ---
     init();
 });
 </script>
