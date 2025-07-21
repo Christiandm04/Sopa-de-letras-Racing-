@@ -1,3 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sopa de Letras - Real Racing Club</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Librería para el confeti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
   <style>
     /* --- VARIABLES Y RESET --- */
     :root {
@@ -24,10 +39,10 @@
       background-position: center;
       background-repeat: no-repeat;
       padding: 20px;
-      overflow: hidden;
+      overflow: hidden; /* Evita el scroll en escritorio */
     }
 
-    /* --- CONTENEDOR PRINCIPAL DEL JUEGO (LAYOUT DE 2 COLUMNAS) --- */
+    /* --- CONTENEDOR PRINCIPAL DEL JUEGO --- */
     .game-container {
       display: flex; flex-direction: row; gap: 30px;
       background-color: var(--bg-color-rgba);
@@ -43,7 +58,7 @@
     .info-panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; color: var(--racing-white); text-align: center; }
     .info-header h1 { font-size: 2.5em; font-weight: 800; color: var(--racing-white); text-shadow: 2px 2px 4px var(--shadow-color); letter-spacing: 1px; line-height: 1.2; }
 
-    /* --- SOPA DE LETRAS (GRID) --- */
+    /* --- SOPA DE LETRAS (GRID ESTÁTICA) --- */
     #wordSearchGrid { border-collapse: collapse; width: 100%; height: 100%; max-width: 600px; max-height: 600px; }
     
     td { 
@@ -51,34 +66,32 @@
       font-size: clamp(1rem, 3.5vmin, 1.8rem); font-weight: 600; 
       color: var(--racing-white); text-transform: uppercase; 
       cursor: pointer; user-select: none; 
-      /* CAMBIO AQUÍ: Se ha eliminado la transición para 'transform' */
-      transition: background-color 0.2s ease; 
+      transition: background-color 0.2s ease; /* Transición solo para el color de fondo */
       aspect-ratio: 1 / 1; 
       box-shadow: inset 0 0 5px rgba(0,0,0,0.2); 
     }
     
     td:not(.found-perm):not(.selected):hover { 
-      background-color: rgba(255, 255, 255, 0.15); 
-      /* CAMBIO AQUÍ: Se ha eliminado 'transform: scale(1.05);' */
+      background-color: rgba(255, 255, 255, 0.15); /* Efecto hover sutil sin cambiar tamaño */
     }
     
     td.selected { 
       background-color: var(--accent-yellow); 
       color: var(--racing-black); 
-      /* CAMBIO AQUÍ: Se ha eliminado 'transform: scale(1.15);' */
-      border-radius: 50%; z-index: 2; 
+      border-radius: 50%; /* La selección es circular pero sin escalar */
+      z-index: 2; 
     }
     
     td.found-perm { 
       background-color: var(--found-green); 
-      color: var(--racing-white); border-radius: 10px; 
-      /* CAMBIO AQUÍ: Se ha eliminado la animación 'found-pop' */
+      color: var(--racing-white); 
+      border-radius: 10px; /* Las celdas encontradas son rectángulos redondeados */
       box-shadow: 0 0 15px rgba(40, 167, 69, 0.7); 
     }
 
     td.missing { background-color: var(--timer-red); color: var(--racing-white); border-radius: 10px; animation: pulse 0.8s infinite alternate; }
 
-    /* --- PANEL DE INFORMACIÓN (PALABRAS Y TIEMPO) --- */
+    /* --- PANEL DE INFORMACIÓN --- */
     .info-content h2 { font-size: 1.3rem; margin-bottom: 10px; border-bottom: 2px solid var(--accent-yellow); display: inline-block; padding-bottom: 5px; }
     #wordsList ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 20px; }
     #wordsList li { font-size: 1.2em; padding: 4px 0 4px 25px; position: relative; opacity: 0.9; text-shadow: 1px 1px 3px var(--shadow-color); }
@@ -103,7 +116,6 @@
 
     /* --- ANIMACIONES --- */
     @keyframes pulse { to { opacity: 0.7; } }
-    @keyframes found-pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
     @keyframes checkmark-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
     /* --- MEDIA QUERIES PARA RESPONSIVE (MÓVIL) --- */
@@ -111,7 +123,7 @@
       body {
         align-items: flex-start;
         padding: 10px;
-        overflow-y: auto;
+        overflow-y: auto; /* Permite scroll en móvil si el contenido es muy alto */
       }
       .game-container {
         flex-direction: column;
@@ -120,24 +132,361 @@
         padding: 15px;
       }
       .info-panel {
-        order: -1;
+        order: -1; /* Pone el panel de info arriba */
         gap: 15px;
         margin-bottom: 15px;
       }
-      .info-header h1 {
-        font-size: 1.7em;
-      }
-      .info-content h2 {
-        margin-bottom: 8px;
-        font-size: 1.2em;
-      }
+      .info-header h1 { font-size: 1.7em; }
+      .info-content h2 { margin-bottom: 8px; font-size: 1.2em; }
       #wordsList ul { gap: 5px 15px; }
       #wordsList li { font-size: 1em; }
-      .info-footer h2 {
-        margin-top: 10px;
-        font-size: 1.2em;
-      }
+      .info-footer { margin-top: 10px; } /* Reducido para juntar más los elementos */
+      .info-footer h2 { font-size: 1.2em; }
       #timer { font-size: 2.5em; }
       .modal-content #modal-message { font-size: 1.5em; }
     }
   </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="grid-panel">
+      <table id="wordSearchGrid"></table>
+    </div>
+    <div class="info-panel">
+        <div class="info-header">
+            <h1>SOPA DE LETRAS<br>RACINGUISTA</h1>
+        </div>
+        <div class="info-content">
+            <h2>Palabras a Encontrar</h2>
+            <div id="wordsList"><ul></ul></div>
+        </div>
+        <div class="info-footer">
+            <h2>Tiempo Restante</h2>
+            <div id="timer">03:00</div>
+        </div>
+    </div>
+  </div>
+
+  <div id="game-over-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="modal-message"></h2>
+      <div class="modal-buttons">
+        <button id="solve-button">Resolver</button>
+        <button id="restart-button" onclick="location.reload()">Jugar de Nuevo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audios (alojados externamente, para un proyecto real es mejor alojarlos localmente) -->
+  <audio id="sound-click" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-the-sound-pack-tree/tspt_computer_mouse_click_single_03_082.mp3" preload="auto"></audio>
+  <audio id="sound-found" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-universal-production-music/upm_sfx_1_9.mp3" preload="auto"></audio>
+  <audio id="sound-win" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-little-robot-sound-factory/lrfs_sfx_achieve_bell_2_positive_game.mp3" preload="auto"></audio>
+  <audio id="sound-lose" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-sound-ideas/sound_ideas_sfx_negative_tone_01.mp3" preload="auto"></audio>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURACIÓN DEL JUEGO ---
+    const config = {
+        WORDS: ["SANGALLI", "JEREMY", "EZKIETA", "ARANA", "MICHELIN", "SAUL", "ALDASORO", "MANTILLA", "VICENTE"],
+        GRID_ROWS: 12,
+        GRID_COLS: 12,
+        GAME_DURATION: 180, // en segundos (3 minutos)
+    };
+
+    // --- REFERENCIAS A ELEMENTOS DEL DOM ---
+    const dom = {
+        grid: document.getElementById('wordSearchGrid'),
+        wordsList: document.querySelector('#wordsList ul'),
+        timer: document.getElementById('timer'),
+        modal: document.getElementById('game-over-modal'),
+        modalMessage: document.getElementById('modal-message'),
+        solveButton: document.getElementById('solve-button'),
+        sounds: {
+            click: document.getElementById('sound-click'),
+            found: document.getElementById('sound-found'),
+            win: document.getElementById('sound-win'),
+            lose: document.getElementById('sound-lose'),
+        }
+    };
+
+    // --- ESTADO DEL JUEGO ---
+    const state = {
+        grid: [],
+        wordLocations: {},
+        isSelecting: false,
+        selection: { cells: [], startCell: null, endCell: null },
+        gameEnded: false,
+        foundWords: new Set(),
+        timeLeft: config.GAME_DURATION,
+        timerInterval: null
+    };
+
+    // --- LÓGICA PRINCIPAL ---
+
+    function init() {
+        if (!generateGrid()) {
+            alert("Error crítico: No se pudo generar la sopa de letras. Por favor, refresca la página.");
+            return;
+        }
+        renderGrid();
+        renderWordsList();
+        setupEventListeners();
+        startTimer();
+    }
+    
+    function setupEventListeners() {
+        // Eventos de Ratón (para escritorio)
+        dom.grid.addEventListener('mousedown', handleMouseDown);
+        dom.grid.addEventListener('mouseover', handleMouseOver);
+        window.addEventListener('mouseup', handleMouseUp);
+        
+        // Eventos Táctiles (para móviles y tabletas) para evitar el scroll al seleccionar
+        // Se usa { passive: false } para poder llamar a event.preventDefault()
+        dom.grid.addEventListener('touchstart', handleTouchStart, { passive: false });
+        dom.grid.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd);
+
+        // Botón de resolver en el modal de fin de juego
+        dom.solveButton.addEventListener('click', () => {
+            revealMissingWords();
+            dom.solveButton.disabled = true;
+        });
+    }
+
+    // --- MANEJADORES DE EVENTOS TÁCTILES (SOLUCIÓN MÓVIL) ---
+    function handleTouchStart(e) {
+        e.preventDefault(); // Previene el scroll y otros comportamientos del navegador
+        const touch = e.touches[0];
+        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (targetCell && targetCell.tagName === 'TD') {
+            handleMouseDown({ target: targetCell }); // Reutiliza la lógica del ratón
+        }
+    }
+
+    function handleTouchMove(e) {
+        e.preventDefault(); // Previene el scroll al arrastrar el dedo
+        const touch = e.touches[0];
+        const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (targetCell && targetCell.tagName === 'TD') {
+            handleMouseOver({ target: targetCell }); // Reutiliza la lógica del ratón
+        }
+    }
+
+    function handleTouchEnd() {
+        handleMouseUp(); // Reutiliza la lógica del ratón
+    }
+
+    // --- MANEJADORES DE EVENTOS DE RATÓN (LÓGICA DE SELECCIÓN) ---
+    function handleMouseDown(e) {
+        const cell = e.target.closest('td');
+        if (state.gameEnded || !cell) return;
+        state.isSelecting = true;
+        // El .catch() evita errores en navegadores que bloquean el audio al inicio
+        dom.sounds.click.play().catch(()=>{});
+        state.selection.startCell = cell;
+        state.selection.endCell = cell;
+        updateSelection();
+    }
+
+    function handleMouseOver(e) {
+        if (!state.isSelecting) return;
+        const cell = e.target.closest('td');
+        if (!cell || cell === state.selection.endCell) return;
+        state.selection.endCell = cell;
+        updateSelection();
+    }
+
+    function handleMouseUp() {
+        if (!state.isSelecting) return;
+        state.isSelecting = false;
+        checkSelectedWord();
+        clearSelectionClasses();
+    }
+    
+    // --- LÓGICA DE SELECCIÓN Y VALIDACIÓN ---
+    function updateSelection() {
+        clearSelectionClasses();
+        state.selection.cells = [];
+        const start = state.selection.startCell.dataset;
+        const end = state.selection.endCell.dataset;
+        const startR = parseInt(start.row), startC = parseInt(start.col);
+        const endR = parseInt(end.row), endC = parseInt(end.col);
+
+        // Validar que la selección sea recta (horizontal, vertical o diagonal perfecta)
+        let dr = Math.sign(endR - startR), dc = Math.sign(endC - startC);
+        if (Math.abs(endR - startR) > 0 && Math.abs(endC - startC) > 0 && Math.abs(endR - startR) !== Math.abs(endC - startC)) {
+            return; // No es una línea válida, no hacer nada
+        }
+        
+        // Recorrer la línea desde el inicio hasta el fin
+        let r = startR, c = startC;
+        while (true) {
+            const currentCell = dom.grid.rows[r]?.cells[c]; // Uso de optional chaining '?' por seguridad
+            if (currentCell) {
+                state.selection.cells.push(currentCell);
+                currentCell.classList.add('selected');
+            }
+            if (r === endR && c === endC) break;
+            r += dr; c += dc;
+        }
+    }
+
+    function checkSelectedWord() {
+        if (state.selection.cells.length < 2) return;
+        const selectedString = state.selection.cells.map(c => c.textContent).join('');
+        const reversedString = selectedString.split('').reverse().join('');
+
+        const word = config.WORDS.find(w => (w === selectedString || w === reversedString) && !state.foundWords.has(w));
+        
+        if (word) {
+            dom.sounds.found.play().catch(()=>{});
+            state.foundWords.add(word);
+            document.getElementById(`word-${word}`).classList.add('found');
+            state.selection.cells.forEach(c => c.classList.add('found-perm'));
+            if (state.foundWords.size === config.WORDS.length) {
+                endGame(true); // Ganó
+            }
+        }
+    }
+
+    function clearSelectionClasses() {
+        state.selection.cells.forEach(cell => {
+            if (!cell.classList.contains('found-perm')) {
+                cell.classList.remove('selected');
+            }
+        });
+    }
+
+    // --- LÓGICA DE FIN DE JUEGO Y TEMPORIZADOR ---
+    function endGame(isWin) {
+        if (state.gameEnded) return;
+        state.gameEnded = true;
+        clearInterval(state.timerInterval);
+        dom.timer.classList.remove('critical');
+
+        if (isWin) {
+            dom.sounds.win.play().catch(()=>{});
+            dom.modalMessage.textContent = "¡Enhorabuena, has ganado!";
+            dom.solveButton.style.display = 'none';
+            confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+        } else {
+            dom.sounds.lose.play().catch(()=>{});
+            dom.modalMessage.textContent = "¡Se acabó el tiempo!";
+            dom.solveButton.style.display = 'inline-block';
+        }
+        dom.modal.classList.add('visible');
+    }
+    
+    function startTimer() {
+        dom.timer.textContent = formatTime(state.timeLeft);
+        state.timerInterval = setInterval(() => {
+            state.timeLeft--;
+            dom.timer.textContent = formatTime(state.timeLeft);
+            if (state.timeLeft <= 10 && !state.gameEnded) {
+                dom.timer.classList.add('critical');
+            }
+            if (state.timeLeft <= 0) {
+                endGame(false); // Perdió por tiempo
+            }
+        }, 1000);
+    }
+    
+    // --- FUNCIONES DE GENERACIÓN Y RENDERIZADO DE LA CUADRÍCULA ---
+    function generateGrid() {
+        state.grid = Array(config.GRID_ROWS).fill(null).map(() => Array(config.GRID_COLS).fill(''));
+        state.wordLocations = {};
+        const wordsToPlace = [...config.WORDS].sort((a, b) => b.length - a.length);
+        for (const word of wordsToPlace) { if (!placeWord(word)) { return false; } }
+        fillEmptyCells();
+        return true;
+    }
+    
+    function placeWord(word) {
+        const directions = [ { r: 0, c: 1 }, { r: 0, c: -1 }, { r: 1, c: 0 }, { r: -1, c: 0 }, { r: 1, c: 1 }, { r: -1, c: -1 }, { r: 1, c: -1 }, { r: -1, c: 1 } ];
+        const validPlacements = [];
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                for (const dir of directions) { if (canPlace(word, r, c, dir)) { validPlacements.push({ r, c, dir }); } }
+            }
+        }
+        if (validPlacements.length === 0) return false;
+        const placement = validPlacements[Math.floor(Math.random() * validPlacements.length)];
+        let { r, c, dir } = placement;
+        for (let i = 0; i < word.length; i++) { state.grid[r + i * dir.r][c + i * dir.c] = word[i]; }
+        const endPos = { r: r + (word.length - 1) * dir.r, c: c + (word.length - 1) * dir.c };
+        state.wordLocations[word] = { start: {r,c}, end: endPos, dir };
+        return true;
+    }
+
+    function canPlace(word, r, c, dir) {
+        for (let i = 0; i < word.length; i++) {
+            const newR = r + i * dir.r, newC = c + i * dir.c;
+            if (newR < 0 || newR >= config.GRID_ROWS || newC < 0 || newC >= config.GRID_COLS) return false;
+            if (state.grid[newR][newC] !== '' && state.grid[newR][newC] !== word[i]) return false;
+        }
+        return true;
+    }
+
+    function fillEmptyCells() {
+        const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                if (state.grid[r][c] === '') { state.grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)]; }
+            }
+        }
+    }
+
+    function renderGrid() {
+        dom.grid.innerHTML = '';
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            const row = dom.grid.insertRow();
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                const cell = row.insertCell();
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                cell.textContent = state.grid[r][c];
+            }
+        }
+    }
+
+    function renderWordsList() {
+        config.WORDS.sort().forEach(word => {
+            const li = document.createElement('li');
+            li.id = `word-${word}`;
+            const span = document.createElement('span');
+            span.textContent = word;
+            li.appendChild(span);
+            dom.wordsList.appendChild(li);
+        });
+    }
+
+    // --- FUNCIONES DE AYUDA ---
+    function revealMissingWords() {
+        config.WORDS.forEach(word => {
+            if (state.foundWords.has(word)) return;
+            const loc = state.wordLocations[word];
+            if (!loc) return;
+            
+            let r = loc.start.r, c = loc.start.c;
+            for (let i = 0; i < word.length; i++) {
+                const cell = dom.grid.rows[r]?.cells[c];
+                if (cell && !cell.classList.contains('found-perm')) {
+                    cell.classList.add('missing');
+                }
+                r += loc.dir.r; c += loc.dir.c;
+            }
+        });
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // --- INICIAR EL JUEGO ---
+    init();
+});
+</script>
+</body>
+</html>
