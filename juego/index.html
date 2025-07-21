@@ -24,7 +24,6 @@
       --timer-red: #d9534f;
       --bg-color-rgba: rgba(0, 106, 78, 0.92);
       --shadow-color: rgba(0, 0, 0, 0.3);
-      --line-thickness: 4px; /* Grosor de la línea de selección */
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,36 +66,24 @@
       font-size: clamp(1rem, 3.5vmin, 1.8rem); font-weight: 600;
       color: var(--racing-white); text-transform: uppercase;
       cursor: pointer; user-select: none;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.2s ease, color 0.2s ease;
       aspect-ratio: 1 / 1;
       box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-      /* Propiedades para el fondo y la línea */
-      background-repeat: no-repeat;
-      background-size: 100% 100%;
     }
     
     td:not(.found-perm):not(.selected):hover { background-color: rgba(255, 255, 255, 0.15); }
     
-    /* --- NUEVOS ESTILOS PARA LA LÍNEA DE SELECCIÓN --- */
+    /* --- ESTILO DE SELECCIÓN: RELLENO SÓLIDO --- */
     td.selected {
+      background-color: var(--accent-yellow);
       color: var(--racing-black);
-      /* La línea se define con las clases de dirección */
     }
     
     td.found-perm {
       background-color: var(--found-green);
-      border-radius: 10px; /* Mantenemos un borde sutil para las encontradas */
+      color: var(--racing-white);
+      border-radius: 10px; /* Un toque redondeado solo para las palabras ya encontradas */
     }
-    
-    /* Clases de dirección para la línea (usando gradientes) */
-    .line-horizontal { background-image: linear-gradient(to bottom, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); }
-    .line-vertical { background-image: linear-gradient(to right, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); }
-    .line-diag-dr { background-image: linear-gradient(135deg, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); } /* Down-Right */
-    .line-diag-dl { background-image: linear-gradient(45deg, transparent calc(50% - var(--line-thickness)/2), var(--line-color) 0, var(--line-color) calc(50% + var(--line-thickness)/2), transparent 0); } /* Down-Left */
-
-    /* Define el color de la línea según el estado */
-    td.selected { --line-color: var(--accent-yellow); }
-    td.found-perm { --line-color: var(--racing-white); } /* Línea blanca sobre fondo verde */
 
     td.missing { background-color: var(--timer-red); color: var(--racing-white); border-radius: 10px; animation: pulse 0.8s infinite alternate; }
 
@@ -196,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const state = {
         grid: [], wordLocations: {}, isSelecting: false,
-        selection: { cells: [], startCell: null, endCell: null, directionClass: '' },
+        selection: { cells: [], startCell: null, endCell: null }, // JS simplificado, sin clases de dirección
         gameEnded: false, foundWords: new Set(), timeLeft: config.GAME_DURATION, timerInterval: null
     };
 
@@ -250,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearSelectionClasses();
     }
     
-    // --- LÓGICA DE SELECCIÓN Y VALIDACIÓN ---
+    // --- LÓGICA DE SELECCIÓN Y VALIDACIÓN (SIMPLIFICADA) ---
     function updateSelection() {
         clearSelectionClasses();
         state.selection.cells = [];
@@ -262,24 +249,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let dr = Math.sign(endR - startR), dc = Math.sign(endC - startC);
         
+        // Sigue validando que la selección sea una línea recta
         if (Math.abs(endR - startR) > 0 && Math.abs(endC - startC) > 0 && Math.abs(endR - startR) !== Math.abs(endC - startC)) {
-            state.selection.directionClass = '';
             dr = 0; dc = 0; // Invalida la dirección si no es recta
-        } else if (dr === 0 && dc !== 0) state.selection.directionClass = 'line-horizontal';
-        else if (dr !== 0 && dc === 0) state.selection.directionClass = 'line-vertical';
-        else if (dr === dc) state.selection.directionClass = 'line-diag-dr';
-        else if (dr !== dc) state.selection.directionClass = 'line-diag-dl';
-        else state.selection.directionClass = 'line-horizontal'; // fallback para un solo punto
+        }
         
         let r = startR, c = startC;
         while (true) {
             const currentCell = dom.grid.rows[r]?.cells[c];
             if (currentCell) {
                 state.selection.cells.push(currentCell);
-                currentCell.classList.add('selected');
-                if (state.selection.directionClass) {
-                    currentCell.classList.add(state.selection.directionClass);
-                }
+                currentCell.classList.add('selected'); // Solo añade la clase 'selected'
             }
             if (r === endR && c === endC) break;
             if(dr === 0 && dc === 0) break; // Sale si la dirección es inválida
@@ -298,11 +278,9 @@ document.addEventListener('DOMContentLoaded', () => {
             state.foundWords.add(word);
             document.getElementById(`word-${word}`).classList.add('found');
             
-            // Hacemos el estilo de la palabra encontrada permanente
             state.selection.cells.forEach(c => {
                 c.classList.remove('selected');
-                c.classList.add('found-perm');
-                // La clase de dirección se mantiene para dibujar la línea blanca
+                c.classList.add('found-perm'); // Pasa directamente al estado 'found-perm'
             });
             
             if (state.foundWords.size === config.WORDS.length) endGame(true);
@@ -312,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearSelectionClasses() {
         state.selection.cells.forEach(cell => {
             if (!cell.classList.contains('found-perm')) {
-                cell.classList.remove('selected', 'line-horizontal', 'line-vertical', 'line-diag-dr', 'line-diag-dl');
+                cell.classList.remove('selected'); // Solo necesita quitar la clase 'selected'
             }
         });
     }
@@ -347,8 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
     
-    // --- GENERACIÓN DE LA CUADRÍCULA ---
-    // (Esta sección no ha cambiado)
+    // --- GENERACIÓN DE LA CUADRÍCULA (SIN CAMBIOS) ---
     function generateGrid() {
         state.grid = Array(config.GRID_ROWS).fill(null).map(() => Array(config.GRID_COLS).fill(''));
         state.wordLocations = {};
