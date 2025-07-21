@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sopa de Letras (Final) - Real Racing Club</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Librería para el confeti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* --- VARIABLES Y RESET --- */
+    :root {
+      --racing-green: #006a4e;
+      --racing-black: #000000;
+      --racing-white: #ffffff;
+      --accent-yellow: #f7b32b;
+      --found-green: #28a745;
+      --timer-red: #d9534f;
+      --bg-color-rgba: rgba(0, 106, 78, 0.92);
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhilSt3TFlZKk7weLwTVgbdhHTZPzazIdgPUpT2N5w2V5AZM5l9LzQb_RkDsRJyidnvNOAZTXUK7WfGPWP8cx54QdDBjYSw0jH5Xq8dTJCejiQ7zuEH-L_UoOzAOlGuC6zCTR83U4VBsS8kEI5qkd3OjNacIqgfdUkgCnNkbeO4eDpHCg8kHcYcz_e_H50/s1700/Racing%202%20-%20Eibar%200%20-%20uno%20a%20uno.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* --- CONTENEDOR PRINCIPAL DEL JUEGO (LAYOUT DE 2 COLUMNAS) --- */
+    .game-container {
+      display: flex; flex-direction: row; gap: 30px;
+      background-color: var(--bg-color-rgba);
+      padding: 30px;
+      border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px 0 var(--shadow-color);
+      width: 100%; max-width: 1200px; height: 90vh; max-height: 700px;
+    }
+
+    /* --- PANELES IZQUIERDO (GRID) Y DERECHO (INFO) --- */
+    .grid-panel { flex: 1.5; display: flex; justify-content: center; align-items: center; }
+    .info-panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; color: var(--racing-white); text-align: center; }
+    .info-header h1 { font-size: 2.5em; font-weight: 800; color: var(--racing-white); text-shadow: 2px 2px 4px var(--shadow-color); letter-spacing: 1px; line-height: 1.2; }
+
+    /* --- SOPA DE LETRAS (GRID) --- */
+    #wordSearchGrid { border-collapse: collapse; width: 100%; height: 100%; max-width: 600px; max-height: 600px; }
+    td { text-align: center; vertical-align: middle; font-size: clamp(1rem, 3.5vmin, 1.8rem); font-weight: 600; color: var(--racing-white); text-transform: uppercase; cursor: pointer; user-select: none; transition: transform 0.2s ease, background-color 0.2s ease; aspect-ratio: 1 / 1; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
+    td:not(.found-perm):not(.selected):hover { background-color: rgba(255, 255, 255, 0.15); transform: scale(1.05); }
+    td.selected { background-color: var(--accent-yellow); color: var(--racing-black); transform: scale(1.15); border-radius: 50%; z-index: 2; }
+    td.found-perm { background-color: var(--found-green); color: var(--racing-white); border-radius: 10px; animation: found-pop 0.3s ease-out; box-shadow: 0 0 15px rgba(40, 167, 69, 0.7); }
+    td.missing { background-color: var(--timer-red); color: var(--racing-white); border-radius: 10px; animation: pulse 0.8s infinite alternate; }
+
+    /* --- PANEL DE INFORMACIÓN (PALABRAS Y TIEMPO) --- */
+    .info-content h2 { font-size: 1.3rem; margin-bottom: 10px; border-bottom: 2px solid var(--accent-yellow); display: inline-block; padding-bottom: 5px; }
+    #wordsList ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 20px; }
+    #wordsList li { font-size: 1.2em; padding: 4px 0 4px 25px; position: relative; opacity: 0.9; text-shadow: 1px 1px 3px var(--shadow-color); }
+    #wordsList li.found { opacity: 0.5; }
+    #wordsList li.found::before { content: "✓"; position: absolute; left: 0; color: var(--accent-yellow); font-weight: bold; animation: checkmark-pop 0.4s ease-out; }
+    #wordsList li.found span { text-decoration: line-through; }
+    .info-footer { margin-top: 20px; }
+    #timer { font-size: 3.5em; font-weight: 800; color: var(--racing-white); text-shadow: 1px 1px 3px var(--shadow-color); }
+    #timer.critical { color: var(--timer-red); animation: pulse 1s infinite; }
+
+    /* --- MODAL DE FIN DE JUEGO --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
+    .modal-overlay.visible { opacity: 1; visibility: visible; }
+    .modal-content { background: var(--racing-white); color: var(--racing-black); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px var(--shadow-color); transform: scale(0.7); transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); width: 90%; max-width: 500px; }
+    .modal-overlay.visible .modal-content { transform: scale(1); }
+    .modal-content #modal-message { font-size: 2.2em; font-weight: 800; margin-bottom: 25px; }
+    .modal-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+    .modal-content button { padding: 15px 30px; font-size: 1.1em; font-weight: 600; border-radius: 10px; border: none; cursor: pointer; color: var(--racing-white); background-color: var(--racing-green); transition: background-color 0.2s ease; }
+    .modal-content button:hover { opacity: 0.9; }
+    #solve-button { background-color: var(--accent-yellow); color: var(--racing-black); display: none; }
+    #solve-button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; opacity: 1; }
+
+    /* --- ANIMACIONES --- */
+    @keyframes pulse { to { opacity: 0.7; } }
+    @keyframes found-pop { 0% { transform: scale(0.8); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes checkmark-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+    /* --- MEDIA QUERIES PARA RESPONSIVE (MÓVIL) --- */
+    @media (max-width: 900px) {
+      body {
+        align-items: flex-start;
+        padding: 10px;
+        overflow-y: auto;
+      }
+      .game-container {
+        flex-direction: column;
+        height: auto;
+        max-height: none;
+        /* AJUSTE: Menos padding vertical en móvil para subir todo el bloque */
+        padding: 15px;
+      }
+      .info-panel {
+        order: -1;
+        /* AJUSTE: Reducir el espacio entre elementos de info y el margen inferior */
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+      .info-header h1 {
+        /* AJUSTE: Título ligeramente más compacto */
+        font-size: 1.7em;
+      }
+      .info-content h2 {
+        /* AJUSTE: Menos margen inferior en el título de la lista de palabras */
+        margin-bottom: 8px;
+        font-size: 1.2em;
+      }
+      #wordsList ul { gap: 5px 15px; }
+      #wordsList li { font-size: 1em; }
+      .info-footer h2 {
+         /* AJUSTE: Menos espacio sobre el título del temporizador */
+        margin-top: 10px;
+        font-size: 1.2em;
+      }
+      #timer { font-size: 2.5em; }
+      .modal-content #modal-message { font-size: 1.5em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="grid-panel">
+      <table id="wordSearchGrid"></table>
+    </div>
+    <div class="info-panel">
+        <div class="info-header">
+            <h1>SOPA DE LETRAS<br>RACINGUISTA</h1>
+        </div>
+        <div class="info-content">
+            <h2>Palabras a Encontrar</h2>
+            <div id="wordsList"><ul></ul></div>
+        </div>
+        <div class="info-footer">
+            <h2>Tiempo Restante</h2>
+            <div id="timer">03:00</div>
+        </div>
+    </div>
+  </div>
+
+  <div id="game-over-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="modal-message"></h2>
+      <div class="modal-buttons">
+        <button id="solve-button">Resolver</button>
+        <button id="restart-button" onclick="location.reload()">Jugar de Nuevo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audios -->
+  <audio id="sound-click" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-the-sound-pack-tree/tspt_computer_mouse_click_single_03_082.mp3" preload="auto"></audio>
+  <audio id="sound-found" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-universal-production-music/upm_sfx_1_9.mp3" preload="auto"></audio>
+  <audio id="sound-win" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-little-robot-sound-factory/lrfs_sfx_achieve_bell_2_positive_game.mp3" preload="auto"></audio>
+  <audio id="sound-lose" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-effects-sound-ideas/sound_ideas_sfx_negative_tone_01.mp3" preload="auto"></audio>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const config = {
+        WORDS: ["SANGALLI", "JEREMY", "EZKIETA", "ARANA", "MICHELIN", "SAUL", "ALDASORO", "MANTILLA", "VICENTE"],
+        GRID_ROWS: 12,
+        GRID_COLS: 12,
+        GAME_DURATION: 180,
+    };
+
+    const dom = {
+        grid: document.getElementById('wordSearchGrid'),
+        wordsList: document.querySelector('#wordsList ul'),
+        timer: document.getElementById('timer'),
+        modal: document.getElementById('game-over-modal'),
+        modalMessage: document.getElementById('modal-message'),
+        solveButton: document.getElementById('solve-button'),
+        sounds: {
+            click: document.getElementById('sound-click'),
+            found: document.getElementById('sound-found'),
+            win: document.getElementById('sound-win'),
+            lose: document.getElementById('sound-lose'),
+        }
+    };
+
+    const state = {
+        grid: [], wordLocations: {}, isSelecting: false,
+        selection: { cells: [], startCell: null, endCell: null },
+        gameEnded: false, foundWords: new Set(), timeLeft: config.GAME_DURATION, timerInterval: null
+    };
+
+    function init() {
+        if (!generateGrid()) {
+            alert("Error crítico: No se pudo generar la sopa de letras. Por favor, refresca la página.");
+            return;
+        }
+        renderGrid();
+        renderWordsList();
+        setupEventListeners();
+        startTimer();
+    }
+
+    function endGame(isWin) {
+        if (state.gameEnded) return;
+        state.gameEnded = true;
+        clearInterval(state.timerInterval);
+        dom.timer.classList.remove('critical');
+
+        if (isWin) {
+            dom.sounds.win.play();
+            dom.modalMessage.textContent = "¡Enhorabuena, has ganado!";
+            dom.solveButton.style.display = 'none';
+            confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+        } else {
+            dom.sounds.lose.play();
+            dom.modalMessage.textContent = "¡Se acabó el tiempo!";
+            dom.solveButton.style.display = 'inline-block';
+        }
+        dom.modal.classList.add('visible');
+    }
+    
+    function revealMissingWords() {
+        const missingWords = config.WORDS.filter(word => !state.foundWords.has(word));
+        missingWords.forEach(word => {
+            const loc = state.wordLocations[word];
+            if (!loc) return;
+
+            const wordElement = document.getElementById(`word-${word}`);
+            if (wordElement) {
+                wordElement.style.color = 'var(--timer-red)';
+                wordElement.style.fontWeight = 'bold';
+            }
+            
+            let r = loc.start.r, c = loc.start.c;
+            for (let i = 0; i < word.length; i++) {
+                const cell = dom.grid.rows[r]?.cells[c];
+                if (cell && !cell.classList.contains('found-perm')) {
+                    cell.classList.add('missing');
+                }
+                r += loc.dir.r;
+                c += loc.dir.c;
+            }
+        });
+    }
+    
+    function setupEventListeners() {
+        dom.grid.addEventListener('mousedown', handleMouseDown);
+        dom.grid.addEventListener('mouseover', handleMouseOver);
+        window.addEventListener('mouseup', handleMouseUp);
+        dom.solveButton.addEventListener('click', () => {
+            revealMissingWords();
+            dom.solveButton.disabled = true;
+        });
+    }
+
+    // El resto del código JS (generateGrid, renderGrid, etc.) permanece igual.
+    // Lo incluyo para que sea un bloque completo y funcional.
+    function generateGrid() {
+        state.grid = Array(config.GRID_ROWS).fill(null).map(() => Array(config.GRID_COLS).fill(''));
+        state.wordLocations = {};
+        const wordsToPlace = [...config.WORDS].sort((a, b) => b.length - a.length);
+        for (const word of wordsToPlace) { if (!placeWord(word)) { console.error(`Fallo crítico: No se pudo colocar "${word}".`); return false; } }
+        fillEmptyCells();
+        return true;
+    }
+    function fillEmptyCells() {
+        const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                if (state.grid[r][c] === '') { state.grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)]; }
+            }
+        }
+    }
+    function placeWord(word) {
+        const directions = [ { r: 0, c: 1 }, { r: 0, c: -1 }, { r: 1, c: 0 }, { r: -1, c: 0 }, { r: 1, c: 1 }, { r: -1, c: -1 }, { r: 1, c: -1 }, { r: -1, c: 1 } ];
+        const validPlacements = [];
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                for (const dir of directions) { if (canPlace(word, r, c, dir)) { validPlacements.push({ r, c, dir }); } }
+            }
+        }
+        if (validPlacements.length === 0) return false;
+        const placement = validPlacements[Math.floor(Math.random() * validPlacements.length)];
+        let { r, c, dir } = placement;
+        for (let i = 0; i < word.length; i++) { state.grid[r + i * dir.r][c + i * dir.c] = word[i]; }
+        const endPos = { r: r + (word.length - 1) * dir.r, c: c + (word.length - 1) * dir.c };
+        state.wordLocations[word] = { start: {r,c}, end: endPos, dir };
+        return true;
+    }
+    function canPlace(word, r, c, dir) {
+        for (let i = 0; i < word.length; i++) {
+            const newR = r + i * dir.r, newC = c + i * dir.c;
+            if (newR < 0 || newR >= config.GRID_ROWS || newC < 0 || newC >= config.GRID_COLS) return false;
+            if (state.grid[newR][newC] !== '' && state.grid[newR][newC] !== word[i]) return false;
+        }
+        return true;
+    }
+    function renderGrid() {
+        dom.grid.innerHTML = '';
+        for (let r = 0; r < config.GRID_ROWS; r++) {
+            const row = dom.grid.insertRow();
+            for (let c = 0; c < config.GRID_COLS; c++) {
+                const cell = row.insertCell();
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                cell.textContent = state.grid[r][c];
+            }
+        }
+    }
+    function renderWordsList() {
+        config.WORDS.sort().forEach(word => {
+            const li = document.createElement('li');
+            li.id = `word-${word}`;
+            const span = document.createElement('span');
+            span.textContent = word;
+            li.appendChild(span);
+            dom.wordsList.appendChild(li);
+        });
+    }
+    function startTimer() {
+        dom.timer.textContent = formatTime(state.timeLeft);
+        state.timerInterval = setInterval(() => {
+            state.timeLeft--;
+            dom.timer.textContent = formatTime(state.timeLeft);
+            if (state.timeLeft <= 10 && !state.gameEnded) { dom.timer.classList.add('critical'); }
+            if (state.timeLeft <= 0) { endGame(false); }
+        }, 1000);
+    }
+    function handleMouseDown(e) {
+        const cell = e.target.closest('td');
+        if (state.gameEnded || !cell) return;
+        state.isSelecting = true;
+        dom.sounds.click.play().catch(()=>{});
+        state.selection.startCell = cell;
+        state.selection.endCell = cell;
+        updateSelection();
+    }
+    function handleMouseOver(e) {
+        if (!state.isSelecting) return;
+        const cell = e.target.closest('td');
+        if (!cell || cell === state.selection.endCell) return;
+        state.selection.endCell = cell;
+        updateSelection();
+    }
+    function handleMouseUp() {
+        if (!state.isSelecting) return;
+        state.isSelecting = false;
+        checkSelectedWord();
+        clearSelectionClasses();
+    }
+    function updateSelection() {
+        clearSelectionClasses();
+        state.selection.cells = [];
+        const start = state.selection.startCell.dataset;
+        const end = state.selection.endCell.dataset;
+        const startR = parseInt(start.row), startC = parseInt(start.col);
+        const endR = parseInt(end.row), endC = parseInt(end.col);
+        let dr = Math.sign(endR - startR), dc = Math.sign(endC - startC);
+        if (Math.abs(endR - startR) > 0 && Math.abs(endC - startC) > 0 && Math.abs(endR - startR) !== Math.abs(endC - startC)) { return; }
+        let r = startR, c = startC;
+        while (true) {
+            const currentCell = dom.grid.rows[r]?.cells[c];
+            if (currentCell) { state.selection.cells.push(currentCell); currentCell.classList.add('selected'); }
+            if (r === endR && c === endC) break;
+            r += dr; c += dc;
+        }
+    }
+    function checkSelectedWord() {
+        if (state.selection.cells.length < 2) return;
+        const selectedString = state.selection.cells.map(c => c.textContent).join('');
+        const reversedString = selectedString.split('').reverse().join('');
+        const word = config.WORDS.find(w => (w === selectedString || w === reversedString) && !state.foundWords.has(w));
+        if (word) {
+            dom.sounds.found.play();
+            state.foundWords.add(word);
+            document.getElementById(`word-${word}`).classList.add('found');
+            state.selection.cells.forEach(c => c.classList.add('found-perm'));
+            if (state.foundWords.size === config.WORDS.length) { endGame(true); }
+        }
+    }
+    function clearSelectionClasses() {
+        state.selection.cells.forEach(cell => {
+            if (!cell.classList.contains('found-perm')) { cell.classList.remove('selected'); }
+        });
+    }
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    init();
+});
+</script>
+</body>
+</html>
